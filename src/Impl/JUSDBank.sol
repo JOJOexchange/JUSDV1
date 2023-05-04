@@ -83,12 +83,6 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
         );
         _;
     }
-    modifier isLiquidator(address liquidator) {
-        if(isLiquidatorWhitelistOpen){
-            require(isLiquidatorWhiteList[liquidator], "liquidator is not in the liquidator white list");
-        }
-        _;
-    }
 
     function deposit(
         address from,
