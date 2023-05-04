@@ -38,6 +38,10 @@ contract JUSDExchange is IJUSDExchange, Ownable {
         isExchangeOpen = true;
     }
 
+    function refundJUSD(uint256 amount) onlyOwner external {
+        IERC20(JUSD).safeTransfer(msg.sender, amount);
+    }
+
     function buyJUSD(uint256 amount, address to) external {
         require(isExchangeOpen, JUSDErrors.NOT_ALLOWED_TO_EXCHANGE);
         IERC20(primaryAsset).safeTransferFrom(msg.sender, owner(), amount);

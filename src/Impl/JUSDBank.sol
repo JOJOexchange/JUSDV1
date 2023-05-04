@@ -84,6 +84,10 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
         _;
     }
 
+    function refundJUSD(uint256 amount) onlyOwner external {
+        IERC20(JUSD).safeTransfer(msg.sender, amount);
+    }
+
     function deposit(
         address from,
         address collateral,

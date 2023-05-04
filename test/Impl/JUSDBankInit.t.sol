@@ -187,4 +187,14 @@ contract JUSDBankInitTest is Test {
     function testInitMint() public {
         assertEq(jusd.balanceOf(address(jusdBank)), 200000e6);
     }
+
+    function testRefundJUSDBank() public {
+        jusdBank.refundJUSD(100000e6);
+        assertEq(jusd.balanceOf(address(jusdBank)), 100000e6);
+    }
+
+    function testRefundJUSDExechange() public {
+        jusdExchange.refundJUSD(50000e6);
+        assertEq(jusd.balanceOf(address(jusdExchange)), 50000e6);
+    }
 }
