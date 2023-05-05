@@ -78,10 +78,11 @@ contract JUSDBankWithdrawTest is JUSDBankInitTest {
         emit log_uint((5000e6 * 1e18) / rate);
         emit log_uint(jojoOracle2.getAssetPrice());
         uint256 balance = mockToken1.balanceOf(alice);
-        uint256 aliceUsdo = jusdBank.getBorrowBalance(alice);
+        uint256 aliceJusd = jusdBank.getBorrowBalance(alice);
+        emit log_uint(aliceJusd);
         uint256 maxMint = jusdBank.getDepositMaxMintAmount(alice);
         assertEq(balance, 1e18);
-        assertEq(aliceUsdo, (4999993662 * rate2) / 1e18);
+        assertEq(aliceJusd, (4999993662 * rate2) / 1e18);
         assertEq(maxMint, 107200e6);
         assertEq(maxToken2, 1000000000);
         vm.stopPrank();
@@ -99,11 +100,11 @@ contract JUSDBankWithdrawTest is JUSDBankInitTest {
         vm.warp(2000);
         // max borrow amount
         jusdBank.borrow(6000e6, alice, false);
-        uint256 rateT2 = jusdBank.getTRate();
+        uint256 rateT2 = jusdBank.tRate();
         jusd.approve(address(jusdBank), 6000e6);
         vm.warp(3000);
         jusdBank.repay(5000e6, alice);
-        uint256 rateT3 = jusdBank.getTRate();
+        uint256 rateT3 = jusdBank.tRate();
         jusdBank.withdraw(address(mockToken1), 5, alice, false);
         jusdBank.withdraw(address(mockToken2), 5, alice, false);
         emit log_uint((6000e6 * 1e18) / rateT2 + 1 - (5000e6 * 1e18) / rateT3);
@@ -149,14 +150,13 @@ contract JUSDBankWithdrawTest is JUSDBankInitTest {
         jusdBank.deposit(alice, address(mockToken2), 10e8, alice);
         vm.warp(1000);
         jusdBank.borrow(5000e6, alice, false);
-        uint256 rateT2 = jusdBank.getTRate();
+        uint256 rateT2 = jusdBank.tRate();
         jusd.approve(address(jusdBank), 6000e6);
         vm.warp(2000);
         jusdBank.repay(6000e6, alice);
         jusdBank.withdraw(address(mockToken1), 10e18, alice, false);
         uint256 adjustAmount = jusdBank.getBorrowBalance(alice);
-        uint256 rateT3 = jusdBank.getTRate();
-
+        uint256 rateT3 = jusdBank.tRate();
         emit log_uint(
             6000e6 - (((5000e6 * 1e18) / rateT2 + 1) * rateT3) / 1e18
         );

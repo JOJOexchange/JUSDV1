@@ -33,17 +33,11 @@ contract JUSDBankRepayTest is JUSDBankInitTest {
         jusdBank.deposit(alice, address(mockToken2), 10e8, alice);
         vm.warp(2000);
         // max borrow amount
-        uint256 rateT2 = jusdBank.t0Rate() +
-            (jusdBank.borrowFeeRate() *
-                ((block.timestamp - jusdBank.lastUpdateTimestamp()))) /
-            365 days;
+        uint256 rateT2 = jusdBank.getTRate();
         jusdBank.borrow(3000e6, alice, false);
         jusd.approve(address(jusdBank), 6000e6);
         vm.warp(3000);
-        uint256 rateT3 = jusdBank.t0Rate() +
-            (jusdBank.borrowFeeRate() *
-                ((block.timestamp - jusdBank.lastUpdateTimestamp()))) /
-            365 days;
+        uint256 rateT3 = jusdBank.getTRate();
         jusd.approve(address(jusdBank), 3000e6);
         jusdBank.repay(1500e6, alice);
         jusdBank.borrow(1000e6, alice, false);
@@ -104,10 +98,7 @@ contract JUSDBankRepayTest is JUSDBankInitTest {
         mockToken1.approve(address(jusdBank), 10e18);
         jusdBank.deposit(alice, address(mockToken1), 10e18, alice);
         vm.warp(2000);
-        uint256 rateT2 = jusdBank.t0Rate() +
-            (jusdBank.borrowFeeRate() *
-                ((block.timestamp - jusdBank.lastUpdateTimestamp()))) /
-            365 days;
+        uint256 rateT2 = jusdBank.getTRate();
         jusdBank.borrow(3000e6, alice, false);
         uint256 aliceUsedBorrowed = jusdBank.getBorrowBalance(alice);
         emit log_uint((3000e6 * 1e18) / rateT2);

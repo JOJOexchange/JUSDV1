@@ -8,6 +8,7 @@ import {DataTypes} from "../lib/DataTypes.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../utils/FlashLoanReentrancyGuard.sol";
 import "../lib/JOJOConstant.sol";
+import {DecimalMath} from "../lib/DecimalMath.sol";
 
 abstract contract JUSDBankStorage is
     Ownable,
@@ -33,9 +34,9 @@ abstract contract JUSDBankStorage is
     // borrow fee rate
     uint256 public borrowFeeRate;
     // t0Rate
-    uint256 public t0Rate;
+    uint256 public tRate;
     // update timestamp
-    uint32 public lastUpdateTimestamp;
+    uint256 public lastUpdateTimestamp;
     // reserves's list
     address[] public reservesList;
     // insurance account
@@ -48,10 +49,22 @@ abstract contract JUSDBankStorage is
     bool public isLiquidatorWhitelistOpen;
     mapping(address => bool) isLiquidatorWhiteList;
 
-    function getTRate() public view returns (uint256) {
+    using DecimalMath for uint256;
+
+    function accrueRate() public {
+        uint256 currentTimestamp = block.timestamp;
+        if (currentTimestamp == lastUpdateTimestamp) {
+            return;
+        }
+        uint256 timeDifference = block.timestamp - uint256(lastUpdateTimestamp);
+        tRate = tRate.decimalMul(timeDifference * borrowFeeRate / JOJOConstant.SECONDS_PER_YEAR + 1e18);
+        lastUpdateTimestamp = currentTimestamp;
+    }
+
+    function getTRate() view public returns(uint256) {
         uint256 timeDifference = block.timestamp - uint256(lastUpdateTimestamp);
         return
-            t0Rate +
+            tRate +
             (borrowFeeRate * timeDifference) /
             JOJOConstant.SECONDS_PER_YEAR;
     }

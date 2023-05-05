@@ -23,9 +23,7 @@ abstract contract JUSDOperation is JUSDBankStorage {
     );
     event UpdateOracle(address collateral, address newOracle);
     event UpdateBorrowFeeRate(
-        uint256 newBorrowFeeRate,
-        uint256 newT0Rate,
-        uint32 lastUpdateTimestamp
+        uint256 newBorrowFeeRate
     );
     event UpdateMaxReservesAmount(
         uint256 maxReservesAmount,
@@ -166,10 +164,9 @@ abstract contract JUSDOperation is JUSDBankStorage {
     /// @notice update the borrow fee rate
     // t0Rate and lastUpdateTimestamp will be updated according to the borrow fee rate
     function updateBorrowFeeRate(uint256 _borrowFeeRate) external onlyOwner {
-        t0Rate = getTRate();
-        lastUpdateTimestamp = uint32(block.timestamp);
+        accrueRate();
         borrowFeeRate = _borrowFeeRate;
-        emit UpdateBorrowFeeRate(_borrowFeeRate, t0Rate, lastUpdateTimestamp);
+        emit UpdateBorrowFeeRate(_borrowFeeRate);
     }
 
     /// @notice update the reserve risk params
