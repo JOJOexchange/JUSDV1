@@ -47,6 +47,11 @@ abstract contract JUSDOperation is JUSDBankStorage {
         uint256 maxTotalBorrowAmount
     );
 
+    event UpdatePriceDecimalAndTokenAmountDecimal(
+        uint8 newPriceDecimal, 
+        uint8 newTokenAmountDecimal
+    );
+
     /// @notice initial the param of each reserve
     function initReserve(
         address _collateral,
@@ -57,7 +62,9 @@ abstract contract JUSDOperation is JUSDBankStorage {
         uint256 _liquidationMortgageRate,
         uint256 _liquidationPriceOff,
         uint256 _insuranceFeeRate,
-        address _oracle
+        address _oracle,
+        uint8 _priceDecimal,
+        uint8 _amountDecimal
     ) external onlyOwner {
         require(
             JOJOConstant.ONE - _liquidationMortgageRate >
@@ -80,6 +87,8 @@ abstract contract JUSDOperation is JUSDBankStorage {
         reserveInfo[_collateral].isDepositAllowed = true;
         reserveInfo[_collateral].isBorrowAllowed = true;
         reserveInfo[_collateral].oracle = _oracle;
+        reserveInfo[_collateral].priceDecimal = _priceDecimal;
+        reserveInfo[_collateral].amountDecimal = _amountDecimal;
         _addReserve(_collateral);
     }
 
@@ -211,6 +220,15 @@ abstract contract JUSDOperation is JUSDBankStorage {
         );
     }
 
+
+
+    /// @notice update the insurance account
+    function updateDecimal(address collateral, uint8 newPriceDecimal, uint8 newTokenAmountDecimal) external onlyOwner {
+        emit UpdatePriceDecimalAndTokenAmountDecimal(newPriceDecimal, newTokenAmountDecimal);
+        reserveInfo[collateral].priceDecimal = newPriceDecimal;
+        reserveInfo[collateral].amountDecimal = newTokenAmountDecimal;
+    }
+
     /// @notice remove the reserve, need to modify the market status
     /// which means this reserve is delist
     function delistReserve(address collateral) external onlyOwner {
@@ -235,4 +253,14 @@ abstract contract JUSDOperation is JUSDBankStorage {
         operatorRegistry[msg.sender][operator] = isOperator;
         emit SetOperator(msg.sender, operator, isOperator);
     }
+
+    function mintJUSD(uint256 amount) external onlyOwner {
+        transferJUSDIn(msg.sender, address(this), amount);
+    }
+
+    function burnJUSD(uint256 amount) external onlyOwner {
+        transferJUSDOut(msg.sender, amount);
+    }
+
+
 }

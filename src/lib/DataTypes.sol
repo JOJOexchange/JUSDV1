@@ -37,6 +37,9 @@ library DataTypes {
         bool isDepositAllowed;
         //        if allow user borrow USDO
         bool isBorrowAllowed;
+
+        uint8 priceDecimal;
+        uint8 amountDecimal;
     }
 
     /// @notice user param
