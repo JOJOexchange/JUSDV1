@@ -121,7 +121,7 @@ abstract contract JUSDView is JUSDBankStorage, IJUSDBank {
         for (uint256 i; i < collaterals.length; i = i + 1) {
             address collateral = collaterals[i];
             DataTypes.ReserveInfo memory reserve = reserveInfo[collateral];
-            if (!reserve.isBorrowAllowed) {
+            if (!reserve.reverseAllowed.isBorrowAllowed) {
                 continue;
             }
             uint256 colMintAmount = _getMintAmount(
@@ -140,7 +140,7 @@ abstract contract JUSDView is JUSDBankStorage, IJUSDBank {
         for (uint256 i; i < collaterals.length; i = i + 1) {
             address collateral = collaterals[i];
             DataTypes.ReserveInfo memory reserve = reserveInfo[collateral];
-            if (!reserve.isBorrowAllowed) {
+            if (!reserve.reverseAllowed.isBorrowAllowed) {
                 continue;
             }
             maxMintAmount += IPriceChainLink(reserve.oracle).getAssetPrice().decimalMul(user.depositBalance[collateral])
@@ -164,7 +164,7 @@ abstract contract JUSDView is JUSDBankStorage, IJUSDBank {
         for (uint256 i; i < collaterals.length; i = i + 1) {
             address collateral = collaterals[i];
             DataTypes.ReserveInfo memory reserve = reserveInfo[collateral];
-            if (reserve.isFinalLiquidation) {
+            if (reserve.reverseAllowed.isFinalLiquidation) {
                 continue;
             }
             liquidationMaxMintAmount += _getMintAmount(

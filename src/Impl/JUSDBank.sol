@@ -290,7 +290,7 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
         address to,
         address from
     ) internal {
-        require(reserve.isDepositAllowed, JUSDErrors.RESERVE_NOT_ALLOW_DEPOSIT);
+        require(reserve.reverseAllowed.isDepositAllowed, JUSDErrors.RESERVE_NOT_ALLOW_DEPOSIT);
         require(amount != 0, JUSDErrors.DEPOSIT_AMOUNT_IS_ZERO);
         IERC20(collateral).safeTransferFrom(from, address(this), amount);
         _addCollateralIfNotExists(user, collateral);
@@ -384,7 +384,7 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
 
         fromAccount.depositBalance[collateral] -= amount;
         if (isInternal) {
-            require(reserve.isDepositAllowed, JUSDErrors.RESERVE_NOT_ALLOW_DEPOSIT);
+            require(reserve.reverseAllowed.isDepositAllowed, JUSDErrors.RESERVE_NOT_ALLOW_DEPOSIT);
             DataTypes.UserInfo storage toAccount = userInfo[to];
             _addCollateralIfNotExists(toAccount, collateral);
             toAccount.depositBalance[collateral] += amount;

@@ -48,7 +48,7 @@ abstract contract JUSDOperation is JUSDBankStorage {
     );
 
     event UpdatePriceDecimalAndTokenAmountDecimal(
-        uint8 newPriceDecimal, 
+        uint8 newPriceDecimal,
         uint8 newTokenAmountDecimal
     );
 
@@ -84,8 +84,8 @@ abstract contract JUSDOperation is JUSDBankStorage {
             .liquidationMortgageRate = _liquidationMortgageRate;
         reserveInfo[_collateral].liquidationPriceOff = _liquidationPriceOff;
         reserveInfo[_collateral].insuranceFeeRate = _insuranceFeeRate;
-        reserveInfo[_collateral].isDepositAllowed = true;
-        reserveInfo[_collateral].isBorrowAllowed = true;
+        reserveInfo[_collateral].reverseAllowed.isDepositAllowed = true;
+        reserveInfo[_collateral].reverseAllowed.isBorrowAllowed = true;
         reserveInfo[_collateral].oracle = _oracle;
         reserveInfo[_collateral].priceDecimal = _priceDecimal;
         reserveInfo[_collateral].amountDecimal = _amountDecimal;
@@ -233,18 +233,18 @@ abstract contract JUSDOperation is JUSDBankStorage {
     /// which means this reserve is delist
     function delistReserve(address collateral) external onlyOwner {
         DataTypes.ReserveInfo storage reserve = reserveInfo[collateral];
-        reserve.isBorrowAllowed = false;
-        reserve.isDepositAllowed = false;
-        reserve.isFinalLiquidation = true;
+        reserve.reverseAllowed.isBorrowAllowed = false;
+        reserve.reverseAllowed.isDepositAllowed = false;
+        reserve.reverseAllowed.isFinalLiquidation = true;
         emit RemoveReserve(collateral);
     }
 
     /// @notice relist the delist reserve
     function relistReserve(address collateral) external onlyOwner {
         DataTypes.ReserveInfo storage reserve = reserveInfo[collateral];
-        reserve.isBorrowAllowed = true;
-        reserve.isDepositAllowed = true;
-        reserve.isFinalLiquidation = false;
+        reserve.reverseAllowed.isBorrowAllowed = true;
+        reserve.reverseAllowed.isDepositAllowed = true;
+        reserve.reverseAllowed.isFinalLiquidation = false;
         emit ReRegisterReserve(collateral);
     }
 
