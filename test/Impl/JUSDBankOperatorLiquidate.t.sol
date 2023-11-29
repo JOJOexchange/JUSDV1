@@ -119,7 +119,7 @@ contract JUSDBankOperatorLiquidateTest is Test {
             5e16,
             // insuranceFeeRate
             1e17,
-            address(jojoOracleETH)
+            address(jojoOracleETH),6,6
         );
     }
 

@@ -18,7 +18,6 @@ abstract contract JUSDBankStorage is
 {
     // reserve token address ==> reserve info
     mapping(address => DataTypes.ReserveInfo) public reserveInfo;
-    uint256 public JUSDreserveAmount;
     // reserve token address ==> user info
     mapping(address => DataTypes.UserInfo) public userInfo;
     //client -> operator -> bool
@@ -70,16 +69,5 @@ abstract contract JUSDBankStorage is
             tRate +
             (borrowFeeRate * timeDifference) /
             JOJOConstant.SECONDS_PER_YEAR;
-    }
-
-
-    function transferJUSDOut(address to, uint256 amount) internal {
-        IERC20(JUSD).safeTransfer(to ,amount);
-        JUSDreserveAmount -= amount;
-    }
-
-    function transferJUSDIn(address from, address to, uint256 amount) internal {
-        IERC20(JUSD).safeTransferFrom(from, to ,amount);
-        JUSDreserveAmount += amount;
     }
 }
