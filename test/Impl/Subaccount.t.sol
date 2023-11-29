@@ -17,6 +17,7 @@ import "@JOJO/contracts/testSupport/TestERC20.sol";
 import {console} from "forge-std/console.sol";
 import "forge-std/Test.sol";
 import "../../src/Impl/JUSDExchange.sol";
+import "../../src/Impl/JUSDRepayHelper.sol";
 import "../../src/Impl/flashloanImpl/FlashLoanRepay.sol";
 import "../../src/Testsupport/SupportsSWAP.sol";
 import "../mocks/MockChainLinkBadDebt.sol";
@@ -49,6 +50,7 @@ contract SubaccountTest is Test {
     JUSDExchange jusdExchange;
     FlashLoanRepay public flashLoanRepay;
     SupportsSWAP public supportsSWAP;
+    JUSDRepayHelper public jusdRepayHelper;
     address internal alice = address(1);
     address internal bob = address(2);
     address internal insurance = address(3);
@@ -124,6 +126,10 @@ contract SubaccountTest is Test {
             1e16,
             address(jojoOracle1),6,6
         );
+        jojoDealer.setSecondaryAsset(address(jusd));
+        jusdRepayHelper = new JUSDRepayHelper(address(jusdBank), address(jusd));
+        jusdRepayHelper.setWhiteList(address(jojoDealer), true);
+
     }
 
     function getSetOperatorData(
@@ -256,5 +262,49 @@ contract SubaccountTest is Test {
         bytes memory dataBob = jojoDealer.getSetOperatorCallData(bob, true);
         cheats.expectRevert("Ownable: caller is not the owner");
         Subaccount(aliceSub).execute(address(jusdBank), dataBob, 0);
+    }
+
+
+    function getRepayParam(
+        address from,
+        address to
+    ) public pure returns (bytes memory) {
+        return
+            abi.encodeWithSignature("repayToBank(address,address)", from, to);
+    }
+
+    function testFastWithdraw() public {
+        jusdBank.updateBorrowFeeRate(0);
+        mockToken1.transfer(alice, 10e18);
+
+        address[] memory user = new address[](2);
+        user[0] = alice;
+        user[1] = address(supportsSWAP);
+        uint256[] memory amount = new uint256[](2);
+        amount[0] = 1000e6;
+        amount[1] = 100000e6;
+        USDC.mint(user, amount);
+
+        jojoDealer.setFastWithdrawalWhitelist(bob, true);
+
+        vm.startPrank(alice);
+        mockToken1.approve(address(jusdBank), 10e18);
+
+        jusdBank.deposit(alice, address(mockToken1), 10e18, alice);
+        jusdBank.borrow(100e6, alice, true);
+        jojoDealer.approveFundOperator(bob, 0, 100e6);
+
+        bytes memory repay = getRepayParam(alice, alice);
+        jojoDealer.requestWithdraw(alice, 0, 100e6);
+        vm.warp(1000);
+
+        cheats.expectRevert("target is not a contract");
+        jojoDealer.executeWithdraw(alice, bob, false, repay);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        bytes memory repay2 = getRepayParam(alice, alice);
+        jojoDealer.fastWithdraw(alice, address(jusdRepayHelper), 0, 100e6, false, repay2);
+
     }
 }
