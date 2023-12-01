@@ -4,20 +4,10 @@
 
 pragma solidity 0.8.9;
 
-interface IWETH {
-    function totalSupply() external view returns (uint256);
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-    function balanceOf(address account) external view returns (uint256);
-
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function transferFrom(address src, address dst, uint256 wad) external returns (bool);
-
+interface IWETH is IERC20 {
     function deposit() external payable;
 
-    function withdraw(uint256 wad) external;
+    function withdraw(uint256) external;
 }
