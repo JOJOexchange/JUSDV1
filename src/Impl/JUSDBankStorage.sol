@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../utils/FlashLoanReentrancyGuard.sol";
 import "../lib/JOJOConstant.sol";
 import {DecimalMath} from "../lib/DecimalMath.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract JUSDBankStorage is
     Ownable,
@@ -18,7 +17,6 @@ abstract contract JUSDBankStorage is
 {
     // reserve token address ==> reserve info
     mapping(address => DataTypes.ReserveInfo) public reserveInfo;
-    uint256 public JUSDreserveAmount;
     // reserve token address ==> user info
     mapping(address => DataTypes.UserInfo) public userInfo;
     //client -> operator -> bool
@@ -49,10 +47,9 @@ abstract contract JUSDBankStorage is
     address public primaryAsset;
     address public JOJODealer;
     bool public isLiquidatorWhitelistOpen;
-    mapping(address => bool) public isLiquidatorWhiteList;
+    mapping(address => bool) isLiquidatorWhiteList;
 
     using DecimalMath for uint256;
-    using SafeERC20 for IERC20;
 
     function accrueRate() public {
         uint256 currentTimestamp = block.timestamp;
@@ -70,16 +67,5 @@ abstract contract JUSDBankStorage is
             tRate +
             (borrowFeeRate * timeDifference) /
             JOJOConstant.SECONDS_PER_YEAR;
-    }
-
-
-    function transferJUSDOut(address to, uint256 amount) internal {
-        IERC20(JUSD).safeTransfer(to ,amount);
-        JUSDreserveAmount -= amount;
-    }
-
-    function transferJUSDIn(address from, address to, uint256 amount) internal {
-        IERC20(JUSD).safeTransferFrom(from, to ,amount);
-        JUSDreserveAmount += amount;
     }
 }
