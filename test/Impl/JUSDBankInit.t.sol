@@ -137,7 +137,7 @@ contract JUSDBankInitTest is Test {
             5e16,
             // insuranceFeeRate
             1e17,
-            address(jojoOracle2),6,6
+            address(jojoOracle2)
         );
 
         jusdBank.initReserve(
@@ -157,7 +157,7 @@ contract JUSDBankInitTest is Test {
             5e16,
             // insuranceFeeRate
             1e17,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
 
         swapContract = new SupportsSWAP(

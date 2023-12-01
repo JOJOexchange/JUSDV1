@@ -122,7 +122,7 @@ contract SubaccountTest is Test {
             5e16,
             // insuranceFeeRate
             1e16,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
     }
 

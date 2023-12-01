@@ -254,4 +254,13 @@ abstract contract JUSDOperation is JUSDBankStorage {
         emit SetOperator(msg.sender, operator, isOperator);
     }
 
+    function mintJUSD(uint256 amount) external onlyOwner {
+        transferJUSDIn(msg.sender, address(this), amount);
+    }
+
+    function burnJUSD(uint256 amount) external onlyOwner {
+        transferJUSDOut(msg.sender, amount);
+    }
+
+
 }

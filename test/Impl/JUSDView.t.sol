@@ -49,7 +49,7 @@ contract JUSDViewTest is JUSDBankInitTest {
             1e17,
             // insuranceFeeRate
             1e17,
-            address(jojoOracle2),6,6
+            address(jojoOracle2)
         );
         uint256 btcPrice = IPriceChainLink(address(jojoOracle2))
             .getAssetPrice();

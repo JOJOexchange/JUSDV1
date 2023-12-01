@@ -116,8 +116,31 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
         );
     }
 
-    function refundJUSD(uint256 amount) onlyOwner external {
-        IERC20(JUSD).safeTransfer(msg.sender, amount);
+    function transferInBeforeRepay(
+        address from,
+        address to
+    ) external nonReentrant nonFlashLoanReentrant returns (uint256) {
+        uint256 JUSDBalance = IERC20(JUSD).balanceOf(address(this));
+        require(JUSDBalance >= JUSDreserveAmount, "not transfer to contract");
+        uint256 JUSDAdd = JUSDBalance - JUSDreserveAmount;
+
+        DataTypes.UserInfo storage user = userInfo[to];
+        accrueRate();
+        uint256 JUSDBorrowed = user.t0BorrowBalance.decimalMul(tRate);
+        uint256 tBorrowAmount;
+        uint256 t0Amount;
+        if (JUSDBorrowed <= JUSDAdd) {
+            tBorrowAmount = JUSDBorrowed;
+            t0Amount = user.t0BorrowBalance;
+        } else {
+            tBorrowAmount = JUSDAdd;
+            t0Amount = JUSDAdd.decimalDiv(tRate);
+        }
+        user.t0BorrowBalance -= t0Amount;
+        t0TotalBorrowAmount -= t0Amount;
+        JUSDreserveAmount += JUSDAdd;
+        emit Repay(from, to, tBorrowAmount);
+        return tBorrowAmount;
     }
 
     function repay(
@@ -302,8 +325,9 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
         if (isDepositToJOJO) {
             IERC20(JUSD).approve(address(JOJODealer), tAmount);
             IDealer(JOJODealer).deposit(0, tAmount, to);
+            JUSDreserveAmount -= tAmount;
         } else {
-            IERC20(JUSD).safeTransfer(to, tAmount);
+            transferJUSDOut(to, tAmount);
         }
         // Personal account hard cap
         require(
@@ -336,7 +360,7 @@ contract JUSDBank is IJUSDBank, JUSDOperation, JUSDView, JUSDMulticall {
             tBorrowAmount = amount;
             t0Amount = amount.decimalDiv(tRate);
         }
-        IERC20(JUSD).safeTransferFrom(payer, address(this), tBorrowAmount);
+        transferJUSDIn(payer, address(this), tBorrowAmount);
         user.t0BorrowBalance -= t0Amount;
         t0TotalBorrowAmount -= t0Amount;
         emit Repay(payer, to, tBorrowAmount);

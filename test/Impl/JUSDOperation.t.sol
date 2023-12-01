@@ -89,7 +89,7 @@ contract JUSDOperationTest is Test {
             5e16,
             // insuranceFeeRate
             1e16,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
     }
 
@@ -127,7 +127,7 @@ contract JUSDOperationTest is Test {
             5e16,
             // insuranceFeeRate
             1e17,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
     }
 
@@ -150,7 +150,7 @@ contract JUSDOperationTest is Test {
             5e16,
             // insuranceFeeRate
             1e16,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
     }
 
@@ -175,7 +175,7 @@ contract JUSDOperationTest is Test {
             5e16,
             // insuranceFeeRate
             1e16,
-            address(jojoOracle1),6,6
+            address(jojoOracle1)
         );
     }
 
