@@ -28,14 +28,6 @@ library DataTypes {
         uint256 liquidationPriceOff;
         //         insurance fee rate
         uint256 insuranceFeeRate;
-
-        ReserveAllowed reverseAllowed;
-
-        uint8 priceDecimal;
-        uint8 amountDecimal;
-    }
-
-    struct ReserveAllowed {
         /*       
             if the mortgage collateral delisted.
             if isFinalLiquidation = true which means user can not deposit collateral and borrow USDO
@@ -45,6 +37,9 @@ library DataTypes {
         bool isDepositAllowed;
         //        if allow user borrow USDO
         bool isBorrowAllowed;
+
+        uint8 priceDecimal;
+        uint8 amountDecimal;
     }
 
     /// @notice user param
