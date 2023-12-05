@@ -3,11 +3,11 @@ pragma solidity 0.8.9;
 
 import "ds-test/test.sol";
 import "../../src/Impl/JUSDBank.sol";
+import "../../src/Impl/JUSDRepayHelper.sol";
 import "../mocks/MockERC20.sol";
 import "../../src/token/JUSD.sol";
 import "../../src/oracle/JOJOOracleAdaptor.sol";
 import "../mocks/MockChainLink.t.sol";
-import "../mocks/MockJOJODealer.sol";
 import "../../src/lib/DataTypes.sol";
 import "@JOJO/contracts/subaccount/Subaccount.sol";
 import "@JOJO/contracts/impl/JOJODealer.sol";
@@ -24,6 +24,7 @@ import "../../src/lib/DecimalMath.sol";
 import "../mocks/MockUSDCPrice.sol";
 import "../mocks/MockDepositETH.sol";
 
+
 interface Cheats {
     function expectRevert() external;
 
@@ -37,6 +38,7 @@ contract SubaccountTest is Test {
     using DecimalMath for uint256;
 
     JUSDBank public jusdBank;
+    JUSDRepayHelper public jusdRepayHelper;
     MockDepositETH public mockDepositETH;
     MockERC20 public mockToken1;
     TestERC20 public USDC;
@@ -49,6 +51,7 @@ contract SubaccountTest is Test {
     JUSDExchange jusdExchange;
     FlashLoanRepay public flashLoanRepay;
     SupportsSWAP public supportsSWAP;
+
     address internal alice = address(1);
     address internal bob = address(2);
     address internal insurance = address(3);
@@ -57,6 +60,7 @@ contract SubaccountTest is Test {
         mockToken1 = new MockERC20(2000e18);
         jusd = new JUSD(6);
         USDC = new TestERC20("USDC", "USDC", 6);
+
         mockToken1ChainLink = new MockChainLink();
         usdcPrice = new MockUSDCPrice();
         jojoDealer = new JOJODealer(address(USDC));
@@ -103,6 +107,7 @@ contract SubaccountTest is Test {
             address(mockToken1),
             address(jojoOracle1)
         );
+        jojoDealer.setSecondaryAsset(address(jusd));
 
         flashLoanRepay.setWhiteListContract(address(supportsSWAP), true);
         jusdBank.initReserve(
@@ -124,6 +129,9 @@ contract SubaccountTest is Test {
             1e16,
             address(jojoOracle1)
         );
+        jusdRepayHelper = new JUSDRepayHelper(address(jusdBank),
+            address(jusd), address(USDC), address(jusdExchange));
+        jusdRepayHelper.setWhiteList(address(jojoDealer), true);
     }
 
     function getSetOperatorData(
@@ -256,5 +264,63 @@ contract SubaccountTest is Test {
         bytes memory dataBob = jojoDealer.getSetOperatorCallData(bob, true);
         cheats.expectRevert("Ownable: caller is not the owner");
         Subaccount(aliceSub).execute(address(jusdBank), dataBob, 0);
+    }
+
+    function testJOJOSubaccountRepayFromPerp() public {
+        mockToken1.transfer(alice, 10e18);
+        address[] memory user = new address[](2);
+        user[0] = alice;
+        user[1] = address(supportsSWAP);
+        uint256[] memory amount = new uint256[](2);
+        amount[0] = 1000e6;
+        amount[1] = 100000e6;
+        USDC.mint(user, amount);
+        jusd.mint(1000e6);
+        jusd.transfer(alice, 1000e6);
+        vm.startPrank(alice);
+        mockToken1.approve(address(jusdBank), 10e18);
+        address aliceSub = subaccountFactory.newSubaccount();
+        bytes memory data = jojoDealer.getSetOperatorCallData(alice, true);
+        Subaccount(aliceSub).execute(address(jojoDealer), data, 0);
+        // alice is the operator of aliceSub in JOJODealer system and can operate the sub account.
+        assertEq(IDealer(jojoDealer).isOperatorValid(aliceSub, alice), true);
+
+        jusd.approve(address(jojoDealer), 1000e6);
+        USDC.approve(address(jojoDealer), 1000e6);
+        jojoDealer.deposit(1000e6, 1000e6, aliceSub);
+
+        // aliceSub is the operator of alice in JUSD system and can operate alice
+        // so that aliceSub can control alice to deposit collateral to subaccount
+        // deposit can be devided into two situation:
+        // 1. main account can deposit directly into sub account.
+        jusdBank.deposit(alice, address(mockToken1), 1e18, aliceSub);
+        // 2. multicall deposit and borrow, in this situation,
+        // users need to let aliceSub operate main account, and borrow from subaccount
+        jusdBank.setOperator(aliceSub, true);
+        bytes memory dataBorrow = jusdBank.getBorrowData(
+            500e6,
+            aliceSub,
+            false
+        );
+        Subaccount(aliceSub).execute(address(jusdBank), dataBorrow, 0);
+
+        bytes memory repayParam = abi.encodeWithSignature("repayToBank(address,address)", aliceSub,aliceSub);
+
+        bytes memory fastWithdraw =
+        abi.encodeWithSignature(
+            "fastWithdraw(address,address,uint256,uint256,bool,bytes)",
+            aliceSub,
+            jusdRepayHelper,
+            500e6,
+            500e6,
+            false,
+            repayParam
+        );
+        (uint256 primary, uint256 secodayr) = jojoDealer.isCreditAllowed(alice, aliceSub);
+        Subaccount(aliceSub).execute(address(jojoDealer), fastWithdraw, 0);
+
+        console.log("aliceSub borrow", jusdBank.getBorrowBalance(aliceSub));
+        console.log("repay amount still", jusd.balanceOf(address(jusdRepayHelper)));
+
     }
 }

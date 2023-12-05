@@ -4,12 +4,15 @@
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./JUSDBank.sol";
+import "../Interface/IJUSDExchange.sol";
 
 pragma solidity 0.8.9;
 
 contract JUSDRepayHelper is Ownable {
     address public immutable JusdBank;
     address public immutable JUSD;
+    address public immutable USDC;
+    address public immutable JUSDExchange;
 
     mapping(address => bool) public adminWhiteList;
 
@@ -21,10 +24,12 @@ contract JUSDRepayHelper is Ownable {
     event UpdateAdmin(address admin,  bool isValid);
     // =========================Consturct===================
 
-    constructor(address _jusdBank, address _JUSD) Ownable() {
+    constructor(address _jusdBank, address _JUSD, address _USDC, address _JUSDExchange) Ownable() {
         // set params
         JusdBank = _jusdBank;
         JUSD = _JUSD;
+        USDC = _USDC;
+        JUSDExchange = _JUSDExchange;
         IERC20(JUSD).approve(JusdBank, type(uint256).max);
     }
 
@@ -34,6 +39,11 @@ contract JUSDRepayHelper is Ownable {
     }
 
     function repayToBank(address from, address to) onlyAdminWhiteList external {
+        uint256 USDCBalance = IERC20(USDC).balanceOf(address(this));
+        if(USDCBalance > 0){
+            IERC20(USDC).approve(JUSDExchange, USDCBalance);
+            IJUSDExchange(JUSDExchange).buyJUSD(USDCBalance, address(this));
+        }
         uint256 balance = IERC20(JUSD).balanceOf(address(this));
         require(balance >= 0, "do not have JUSD");
         IJUSDBank(JusdBank).repay(balance, to);
